@@ -46,7 +46,7 @@
 [status]
   submodule = 1
 [core]
-  autocrlf = true
+  autocrlf = false
 [rebase]
   autosquash = true
 [mergetool]
