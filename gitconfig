@@ -1,0 +1,62 @@
+[user]
+  name = Jonas Marklén
+  email = jonas.marklen@sitedirect.se
+[color]
+  ui = true
+[color "branch"]
+  current = yellow reverse
+  local = yellow
+  remote = green
+[color "diff"]
+  meta = yellow bold
+  frag = magenta bold
+  old = blue bold
+  new = green bold
+[color "status"]
+  added = yellow
+  changed = red
+  untracked = cyan
+[push]
+  # Push current branch even if you've never pushed it before
+  default = current
+[diff]
+  # For Github-style word diffs
+  wordRegex = [^[:space:]]
+[alias]
+  msg = commit --allow-empty -m
+  st = status -sb
+  ci = commit
+  br = branch
+  co = checkout
+  df = diff
+  lgp = log -p
+  count = shortlog -sn
+  today = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
+  standup = log --since='2 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
+  lg = log --graph --pretty=format:'%Cred%h%Creset%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+  l = log --graph --pretty=format':%C(yellow)%h%Cblue%d%Creset %s %C(red) %an, %Cblue%ar%Creset'
+  lol = log --pretty=oneline --abbrev-commit --graph --decorate
+  new = !sh -c 'git lg $1@{1}..$1@{0} "$@"'
+  last = log -n 1 --pretty=format:'%h - %s - %cr' --date=relative --abbrev-commit
+  unstage = reset HEAD
+[apply]
+  whitespace = nowarn
+[help]
+  autocorrect = 1
+[status]
+  submodule = 1
+[core]
+  autocrlf = true
+[rebase]
+  autosquash = true
+[mergetool]
+  keepBackup = false
+[branch "master"]
+  remote = origin
+  merge = refs/heads/master
+[hub]
+	protocol = https
+[github]
+  user = txc
+[merge]
+  tool = opendiff
