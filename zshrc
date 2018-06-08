@@ -90,6 +90,6 @@ alias scct="cd /srv/scct/sitedirect/source/"
 
 POWERLEVEL9K_MODE='awesome-patched'
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=1
-POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon dir vcs)
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon host dir vcs root_indicator)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status time php_version)
 #POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(icons_test)
