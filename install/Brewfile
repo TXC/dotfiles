@@ -1,0 +1,51 @@
+brew "bash"
+brew "coreutils"
+brew "go"
+brew "helm"
+brew "kubebuilder"
+brew "kubernetes-cli"
+brew "openshift-cli"
+brew "operator-sdk"
+brew "powerlevel10k"
+brew "zsh-autosuggestions"
+brew "zsh-navigation-tools"
+brew "zsh-syntax-highlighting"
+cask "docker-desktop", args: { appdir: "/Applications" }
+cask "firefox@developer-edition", args: { appdir: "/Applications" }
+cask "font-fira-code-nerd-font"
+cask "iterm2", args: { appdir: "/Applications" }
+cask "lens", args: { appdir: "/Applications" }
+cask "messenger", args: { appdir: "/Applications" }
+cask "microsoft-auto-update"
+cask "microsoft-teams", args: { appdir: "/Applications" }
+cask "quicklook-csv", args: { appdir: "/Applications" }
+cask "quicklook-json", args: { appdir: "/Applications" }
+cask "slack", args: { appdir: "/Applications" }
+cask "spotify", args: { appdir: "/Applications" }
+cask "telegram", args: { appdir: "/Applications" }
+cask "visual-studio-code", args: { appdir: "/Applications" }
+cask "webpquicklook", args: { appdir: "/Applications" }
+vscode "bierner.markdown-mermaid"
+vscode "eamodio.gitlens"
+vscode "github.copilot"
+vscode "github.copilot-chat"
+vscode "golang.go"
+vscode "google.geminicodeassist"
+vscode "ms-kubernetes-tools.vscode-kubernetes-tools"
+vscode "ms-ossdata.vscode-pgsql"
+vscode "ms-vscode-remote.remote-containers"
+vscode "ms-vscode-remote.remote-ssh"
+vscode "ms-vscode-remote.remote-ssh-edit"
+vscode "ms-vscode-remote.remote-wsl"
+vscode "ms-vscode.makefile-tools"
+vscode "ms-vscode.remote-explorer"
+vscode "openclustermanagement.ocm-vscode-extension"
+vscode "redhat.project-initializer"
+vscode "redhat.vscode-openshift-connector"
+vscode "redhat.vscode-openshift-extension-pack"
+vscode "redhat.vscode-redhat-account"
+vscode "redhat.vscode-rsp-ui"
+vscode "redhat.vscode-server-connector"
+vscode "redhat.vscode-tekton-pipelines"
+vscode "redhat.vscode-yaml"
+vscode "tim-koehler.helm-intellisense"

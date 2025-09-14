@@ -1,0 +1,180 @@
+" Disable compatibility with vi which can cause unexpected issues.
+set nocompatible
+
+" Enable type file detection. Vim will be able to try to detect the type of file in use.
+filetype on
+
+" Enable plugins and load plugin for the detected file type.
+filetype plugin on
+
+" Load an indent file for the detected file type.
+filetype indent on
+
+" Turn syntax highlighting on.
+syntax on
+
+" Add numbers to each line on the left-hand side.
+set number
+
+" Highlight cursor line underneath the cursor horizontally.
+set cursorline
+
+" Highlight cursor line underneath the cursor vertically.
+"set cursorcolumn
+
+" Enable mouse support
+" n = normal mode, v = visual mode, i = insert mode, c = command-line mode,
+" h = all previous modes when editing a help file
+" a = all previous modes
+" r = for the hit-enter and more-prompt prompts
+set mouse=a
+
+"" Set shift width to 2 spaces.
+set shiftwidth=2
+
+" Set tab width to 4 columns.
+set tabstop=2
+
+" Use space characters instead of tabs.
+set expandtab
+
+" Do not save backup files.
+"set nobackup
+
+" Do not let cursor scroll below or above N number of lines when scrolling.
+set scrolloff=10
+
+" Do not wrap lines. Allow long lines to extend as far as the line goes.
+set nowrap
+
+" Make delete key work as intended.
+"   indent = allow backspacing over autoindent
+"   eol    = allow backspacing over line breaks (join lines)
+"   start  = allow spacspacing over the start of insert;
+"            CTRL+W and CTRL+U stop once at the start of insert
+" Backwards compatibility with version 5.4 and earlier
+"   0      = (no value)
+"   1      = indent,eol
+"   2      = indent,eol,start
+"set backspace=indent,eol,start
+"set backspace=2
+
+" While searching though a file incrementally highlight matching characters as you type.
+set incsearch
+
+" Ignore capital letters during search.
+set ignorecase
+
+" Override the ignorecase option if searching for capital letters.
+" This will allow you to search specifically for capital letters.
+set smartcase
+
+" Show partial command you type in the last line of the screen.
+set showcmd
+
+" Show the mode you are on the last line.
+set showmode
+
+" Show matching words during a search.
+set showmatch
+
+" Use highlighting when doing a search.
+set hlsearch
+
+" Set the commands to save in history default number is 20.
+set history=1000
+
+" Enable auto completion menu after pressing TAB.
+set wildmenu
+
+" Make wildmenu behave like similar to Bash completion.
+set wildmode=list:longest
+
+" There are certain files that we would never want to edit with Vim.
+" Wildmenu will ignore files with these extensions.
+set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
+
+" Display the current cursor position (line number, column number, and
+" percentage through the file)
+set ruler
+
+" Format ruler similar to the default
+"set rulerformat=%-14.(%l,%c%V%)\ %P
+
+" Create a visual marker at specified column(s)
+set colorcolumn=80,100
+
+" Enable reading of "modeline".
+" I.e: "/* vim: set tw=80 ts=4 sw=4 noet: */"
+set modeline
+
+" How many lines from the top and bottom to check for modeline.
+set modelines=4
+
+" This option is intended to improve Vim's redrawing performance
+"set ttyfast
+
+" Set UTF-8 as default without "BOM"
+set encoding=utf-8 nobomb
+
+" Don't add EOL at the end of file
+set binary noeol
+
+" Don't allow :autocmd, :shell (:! & :system) or :write (:w & :wq)
+" Offers less protection if you own .vimrc
+"set secure
+
+set backupdir=~/.vim/backups
+set directory=~/.vim/swaps
+if exists("&undodir")
+  set undodir=~/.vim/undo
+endif
+
+" PLUGINS ---------------------------------------------------------------- {{{
+
+" Plugin code goes here.
+
+" }}}
+
+
+" MAPPINGS --------------------------------------------------------------- {{{
+
+" Mappings code goes here.
+
+" }}}
+
+
+" VIMSCRIPT -------------------------------------------------------------- {{{
+
+" This will enable code folding.
+
+" Use the marker method of folding.
+
+augroup filetype_vim
+    autocmd!
+    autocmd FileType vim setlocal foldmethod=marker
+augroup END
+
+if system('uname -r') =~ "Microsoft"
+  augroup Yank
+    autocmd!
+    autocmd TextYankPost * :call system('/mnt/c/windows/system32/clip.exe ',@")
+  augroup END
+endif
+
+"if &term == "xterm-256color"
+"  set t_kb=
+"	fixdel
+"endif
+
+" More Vimscripts code goes here.
+
+" }}}
+
+
+" STATUS LINE ------------------------------------------------------------ {{{
+
+" Status bar code goes here.
+
+" }}}
+
