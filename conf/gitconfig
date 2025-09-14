@@ -2,67 +2,15 @@
   name = Jonas Marklén
   email = txc@txc.se
 
-#[includeIf "gitdir:~/Projects/Personal/**"]
-#  path = ~/personal.gitconfig
+# Include all default settings
+[include]
+  path ~/.dotfiles/conf/git/generic
 
-#[includeIf "gitdir:~/dotfiles/**"]
-#  path = ~/personal.gitconfig
+[includeIf "gitdir:~/Projects/Work/**"]
+  path = ~/work.gitconfig
 
-[core]
-	# autocrlf = true - checkout windows style, commit unix style
-	# autocrlf = input - checkout as-is, commit unix style,
-	# autocrlf = false - checkout as-is, commit as-is
-	autocrlf = false
-	excludesfile = "~/.gitignore_global"
-	#editor = "\"C:/Users/Csk6110/AppData/Local/Programs/Microsoft VS Code/bin/code\" --wait"
-  #sshCommand = "C:/Windows/System32/OpenSSH/ssh.exe -F H:/.ssh/config"
-[branch]
-	autosetupmerge = true
-[color]
-  ui = true
-#	diff = auto
-#	status = auto
-#	branch = auto
-[color "branch"]
-  current = yellow reverse
-  local = yellow
-  remote = green
-[color "diff"]
-  meta = yellow bold
-  frag = magenta bold
-  old = blue bold
-  new = green bold
-[color "status"]
-  added = yellow
-  changed = red
-  untracked = cyan
-[gpg]
-#	program = "C:/Program Files (x86)/GnuPG/bin/gpg"
-[init]
-  defaultBranch = master
-[commit]
-  verbose = true
-#  gpgsign = true
-[pull]
-  default = current
-  rebase = true
-[fetch]
-  prune = true
-[push]
-  useForceIfIncludes = true
-  autoSetupRemote = true
-[rebase]
-  autosquash = true
-  updaterefs = true
-	updateRefs = true
-[branch "master"]
-  remote = origin
-  merge = refs/heads/master
-[status]
-  submodule = 1
-[rerere]
-  enabled = true
-[diff]
-  wordRegex = [^[:space:]]
-[url "ssh://git@github.com/"]
-  insteadOf = https://github.com/
+[includeIf "gitdir:~/Projects/Personal/**"]
+  path = ~/personal.gitconfig
+
+[includeIf "gitdir:~/dotfiles/**"]
+  path = ~/personal.gitconfig
