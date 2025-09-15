@@ -7,10 +7,10 @@
   path ~/.dotfiles/conf/git/generic
 
 [includeIf "gitdir:~/Projects/Work/**"]
-  path = ~/work.gitconfig
-
+  path = ~/.dotfiles/conf/git/.gitconfig.work
+  
 [includeIf "gitdir:~/Projects/Personal/**"]
-  path = ~/personal.gitconfig
+  path = ~/.dotfiles/conf/git/.gitconfig.personal
 
-[includeIf "gitdir:~/dotfiles/**"]
-  path = ~/personal.gitconfig
+[includeIf "gitdir:~/.dotfiles/**"]
+  path = ~/.dotfiles/conf/git/.gitconfig.personal

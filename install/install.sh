@@ -55,9 +55,29 @@ if [[ -f $composerJSON ]]; then
   composer global install > /dev/null 2>&1
 fi
 
+function _ssh_config() {
+  mkdir -p "${HOME}/.ssh/conf.d"
+  chmod 700 "${HOME}/.ssh" "${HOME}/.ssh/conf.d"
+  chmod 600 "${HOME}/.ssh/id_*"
+  chmod 644 "${HOME}/.ssh/id_*.pub"
+  touch "${HOME}/.ssh/authorized_keys" "${HOME}/.ssh/known_hosts"
+  chmod 644 "${HOME}/.ssh/authorized_keys" "${HOME}/.ssh/known_hosts"
+}
+
+echo "Applying SSH Config"
+_ssh_config
+if [[ -f ${HOME}/.ssh/config ]]; then
+  time=`date +%s`
+  mv ${HOME}/.ssh/config ${HOME}/.ssh/config.$time
+  ln -s ${DOTFILES}/conf/sshConfig ${HOME}/.ssh/config
+fi
+
 echo "Installing vim stuff"
+mkdir -p ${HOME}/.vim/backups ${HOME}/.vim/swaps ${HOME}/.vim/undo
 ln -s ${DOTFILES}/conf/vim/.vimrc ${HOME}/.vimrc
-ln -s ${DOTFILES}/conf/vim/.vim_runtime ${HOME}/.vim_runtime
+
+echo "Setting up git"
+git config --global core.excludesfile ~/.dotfiles/conf/gitignore
 
 echo "Everything installed!"
 source ${HOME}/.zshrc

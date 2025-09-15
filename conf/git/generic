@@ -3,7 +3,7 @@
 	# autocrlf = input - checkout as-is, commit unix style,
 	# autocrlf = false - checkout as-is, commit as-is
 	autocrlf = false
-	excludesfile = "~/.gitignore_global"
+	excludesfile = "~/.dotfiles/conf/git/gitignore"
 	#editor = "\"C:/Users/Csk6110/AppData/Local/Programs/Microsoft VS Code/bin/code\" --wait"
   #sshCommand = ssh -i ~/.ssh/id_ed25519
 [branch]

@@ -16,6 +16,3 @@ export LANG=en_US.UTF-8
 export SEALED_SECRETS_CONTROLLER_NAME=sealed-secrets
 export SEALED_SECRETS_CONTROLLER_NAMESPACE=sealed-secrets
 export GOPRIVATE=github.com/stakater-ab/*
-
-
-git config --global core.excludesfile ~/.dotfiles/conf/gitignore
