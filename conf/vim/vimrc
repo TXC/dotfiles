@@ -1,3 +1,6 @@
+" Set maxmempattern. Highest value is: 2_000_000
+set mmp=5000
+
 " Disable compatibility with vi which can cause unexpected issues.
 set nocompatible
 
@@ -29,7 +32,7 @@ set cursorline
 " r = for the hit-enter and more-prompt prompts
 set mouse=a
 
-"" Set shift width to 2 spaces.
+"" Set shift width to 4 spaces.
 set shiftwidth=2
 
 " Set tab width to 4 columns.
@@ -56,7 +59,7 @@ set nowrap
 "   0      = (no value)
 "   1      = indent,eol
 "   2      = indent,eol,start
-"set backspace=indent,eol,start
+set backspace=indent,eol,start
 "set backspace=2
 
 " While searching though a file incrementally highlight matching characters as you type.
@@ -165,6 +168,11 @@ endif
 "if &term == "xterm-256color"
 "  set t_kb=
 "	fixdel
+"endif
+
+" Fix delete key in iTerm2
+"if $TERM_PROGRAM =~ "iTerm"
+"    set t_kD=^[[3~
 "endif
 
 " More Vimscripts code goes here.

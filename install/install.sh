@@ -1,83 +1,101 @@
 #! /usr/bin/env zsh
+# vim: set tw=80 ts=2 sw=2 ft=zsh noet:
+#
+# Entry point for installing these dotfiles.
+#
+#   install.sh              install everything
+#   install.sh git ssh      install only those modules
+#
+# Individual modules can also be run on their own:
+#
+#   zsh install/modules/git.sh
 
-DOTFILES=${HOME}/.dotfiles
-export DOTFILES=${DOTFILES}
-export COMPOSER_HOME=${HOME}/.composer/
-setopt EXTENDED_GLOB
+## Hardcode the dotfiles directory to avoid issues with symlinks.
+## Respect an existing value so this can be tested against another checkout.
+: ${DOTFILES:=${HOME}/.dotfiles}
+export DOTFILES
 
-# Check for Homebrew and install if we don't have it
-if test ! $(which brew); then
-  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+#--------------------------------------
+#  Phase 1: bootstrap
+#--------------------------------------
+#
+# When this script is piped straight from the network:
+#
+#   sh -c "$(curl -fsSL .../install/install.sh)"
+#
+# there is no repository yet and no common.sh to source, and the interpreter is
+# sh rather than zsh. Everything up to the exec below therefore stays POSIX and
+# self-contained; the real work happens after re-running from the checkout.
+
+_here=$(dirname "$0")
+
+if [ ! -r "${_here}/common.sh" ]; then
+  # Check for Homebrew and install if we don't have it
+  if [ -z "$(command -v brew)" ]; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
+
+  # Move any existing dotfiles directory aside before cloning over it
+  if [ -e "${DOTFILES}" ]; then
+    _stamp=$(date +%s)
+    echo "Backing up ${DOTFILES} to ${DOTFILES}.${_stamp}"
+    mv "${DOTFILES}" "${DOTFILES}.${_stamp}"
+  fi
+
+  echo 'Cloning dotfiles repo'
+  git clone https://github.com/TXC/dotfiles.git "${DOTFILES}" || exit 1
+
+  echo 'Done cloning, handing over to the checked out installer'
+  exec zsh "${DOTFILES}/install/install.sh" "$@"
 fi
 
-# Backup old dotfiles directory
-if [[ -d ${DOTFILES} ]]; then
-  time=`date +%s`
-  mv ${DOTFILES} ${HOME}/.dotfiles.$time
+#--------------------------------------
+#  Phase 2: run the modules
+#--------------------------------------
+
+source "${0:A:h}/common.sh"
+
+## Ordered on purpose: homebrew provides powerlevel10k, which zsh expects.
+typeset -a MODULES
+MODULES=(homebrew macos zsh mackup python ssh vim git tmux)
+
+typeset -a requested
+if (( $# )); then
+  for name in "$@"; do
+    if (( ${MODULES[(Ie)${name}]} )); then
+      requested+=("${name}")
+    else
+      error "Unknown module: ${name}"
+      error "Available modules: ${MODULES}"
+      exit 1
+    fi
+  done
+else
+  requested=(${MODULES})
 fi
 
-echo 'Cloning dotfiles repo'
-git clone https://github.com/TXC/dotfiles.git ${DOTFILES}  > /dev/null 2>&1
-cd ${DOTFILES}
+typeset -a failed
+for name in ${requested}; do
+  module="${0:A:h}/modules/${name}.sh"
 
-echo "Done cloning repos"
-echo "Setting up submodules"
-git submodule update --init --recursive > /dev/null 2>&1
+  if [[ ! -r ${module} ]]; then
+    error "Missing module file: ${module}"
+    failed+=("${name}")
+    continue
+  fi
 
-if [[ -f ${HOME}/.zshrc ]]; then
-  echo "Backing up ${HOME}/.zshrc to ${HOME}/.zshrc.$time and installing current version"
-  mv ${HOME}/.zshrc ${HOME}/.zshrc.${time}
-fi
-ln -s ${DOTFILES}/conf/zshrc.conf ${HOME}/.zshrc
-ln -s ${DOTFILES}/conf/mackup.cgf ${HOME}/.mackup.cfg
+  ## Run as a subprocess so one broken module cannot take the rest down
+  ## with it, or leak variables into them.
+  if ! zsh "${module}"; then
+    error "Module failed: ${name}"
+    failed+=("${name}")
+  fi
+done
 
-if [[ "$OSTYPE" == darwin* ]]; then
-  echo "Setting up OSX related shenanigans"
-  composerJSON=${DOTFILES}/composer/composer.osx.json
-
-  # Update Homebrew recipes
-  cd ${DOTFILES}/install
-  brew update
-  brew tap homebrew/bundle
-  brew bundle
-  sh ${DOTFILES}/install/osx.sh
-  brew install romkatv/powerlevel10k/powerlevel10k
-  cd ${DOTFILES}
-
-elif [[ "$OSTYPE" == linux* ]]; then
-  composerJSON = $DOTFILES/composer/composer.nix.json
+if (( ${#failed} )); then
+  error "Finished with failures: ${failed}"
+  exit 1
 fi
 
-if [[ -f $composerJSON ]]; then
-  echo "Installing Composer stuff"
-  echo "composerJSON = ${composerJSON}"
-  ln -s $composerJSON ${COMPOSER_HOME}/composer.json
-  composer global install > /dev/null 2>&1
-fi
-
-function _ssh_config() {
-  mkdir -p "${HOME}/.ssh/conf.d"
-  chmod 700 "${HOME}/.ssh" "${HOME}/.ssh/conf.d"
-  chmod 600 "${HOME}/.ssh/id_*"
-  chmod 644 "${HOME}/.ssh/id_*.pub"
-  touch "${HOME}/.ssh/authorized_keys" "${HOME}/.ssh/known_hosts"
-  chmod 644 "${HOME}/.ssh/authorized_keys" "${HOME}/.ssh/known_hosts"
-}
-
-echo "Applying SSH Config"
-_ssh_config
-if [[ -f ${HOME}/.ssh/config ]]; then
-  time=`date +%s`
-  mv ${HOME}/.ssh/config ${HOME}/.ssh/config.$time
-  ln -s ${DOTFILES}/conf/sshConfig ${HOME}/.ssh/config
-fi
-
-echo "Installing vim stuff"
-mkdir -p ${HOME}/.vim/backups ${HOME}/.vim/swaps ${HOME}/.vim/undo
-ln -s ${DOTFILES}/conf/vim/.vimrc ${HOME}/.vimrc
-
-echo "Setting up git"
-git config --global core.excludesfile ~/.dotfiles/conf/gitignore
-
-echo "Everything installed!"
-source ${HOME}/.zshrc
+heading "Everything installed!"
+info "Run 'exec zsh' to pick up the new shell configuration."

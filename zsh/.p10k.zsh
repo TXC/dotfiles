@@ -33,8 +33,10 @@
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
     os_icon                 # os identifier
+    host                    # hostname
     dir                     # current directory
     vcs                     # git status
+    root_indicator          # is this user root?
     # =========================[ Line #2 ]=========================
     newline                 # \n
     prompt_char             # prompt symbol
@@ -106,6 +108,7 @@
     timewarrior             # timewarrior tracking status (https://timewarrior.net/)
     taskwarrior             # taskwarrior task count (https://taskwarrior.org/)
     per_directory_history   # Oh My Zsh per-directory-history local/global indicator
+    gh_status               # Github auth status
     # cpu_arch              # CPU architecture
     time                    # current time
     # =========================[ Line #2 ]=========================
@@ -737,7 +740,7 @@
   typeset -g POWERLEVEL9K_RANGER_FOREGROUND=178
   # Custom icon.
   # typeset -g POWERLEVEL9K_RANGER_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  
+
   ####################[ yazi: yazi shell (https://github.com/sxyazi/yazi) ]#####################
   # Yazi shell color.
   typeset -g POWERLEVEL9K_YAZI_FOREGROUND=178
@@ -1325,12 +1328,25 @@
   #   typeset -g POWERLEVEL9K_KUBECONTEXT_TEST_FOREGROUND=28
   #   typeset -g POWERLEVEL9K_KUBECONTEXT_TEST_VISUAL_IDENTIFIER_EXPANSION='⭐'
   #   typeset -g POWERLEVEL9K_KUBECONTEXT_TEST_CONTENT_EXPANSION='> ${P9K_CONTENT} <'
+#  typeset -g POWERLEVEL9K_KUBECONTEXT_CLASSES=(
+#      # '*prod*'  PROD    # These values are examples that are unlikely
+#      # '*test*'  TEST    # to match your needs. Customize them as needed.
+#      '*'       DEFAULT)
   typeset -g POWERLEVEL9K_KUBECONTEXT_CLASSES=(
-      # '*prod*'  PROD    # These values are examples that are unlikely
-      # '*test*'  TEST    # to match your needs. Customize them as needed.
-      '*'       DEFAULT)
+       'kind*'   KIND
+       '*prod*'  PROD
+       '*test*'  TEST
+       '*'       DEFAULT)
+
   typeset -g POWERLEVEL9K_KUBECONTEXT_DEFAULT_FOREGROUND=134
   # typeset -g POWERLEVEL9K_KUBECONTEXT_DEFAULT_VISUAL_IDENTIFIER_EXPANSION='⭐'
+
+  typeset -g POWERLEVEL9K_KUBECONTEXT_KIND_FOREGROUND=148  # "Green"
+  typeset -g POWERLEVEL9K_KUBECONTEXT_PROD_FOREGROUND=196  # Red
+  typeset -g POWERLEVEL9K_KUBECONTEXT_TEST_FOREGROUND=208  # Orange
+  #typeset -g POWERLEVEL9K_KUBECONTEXT_DEFAULT_FOREGROUND=250  # Default - Grey
+  typeset -g POWERLEVEL9K_KUBECONTEXT_DEFAULT_FOREGROUND=134  # Default - Purple
+
 
   # Use POWERLEVEL9K_KUBECONTEXT_CONTENT_EXPANSION to specify the content displayed by kubecontext
   # segment. Parameter expansions are very flexible and fast, too. See reference:
@@ -1705,6 +1721,51 @@
   # User-defined prompt segments can be customized the same way as built-in segments.
   # typeset -g POWERLEVEL9K_EXAMPLE_FOREGROUND=208
   # typeset -g POWERLEVEL9K_EXAMPLE_VISUAL_IDENTIFIER_EXPANSION='⭐'
+
+  # GitHub authentication status prompt segment.
+  # Displays the login of the active GitHub account if authenticated, or a warning if not.
+  # Requires `gh` CLI and `jq` to be installed.
+  # Usage: Add `gh_status` to POWERLEVEL9K_LEFT_PROMPT_ELEMENTS or POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS.
+  #
+  function prompt_gh_status() {
+    # Query the active account via gh CLI and extract state and login with jq
+    local auth_info
+    auth_info=$(gh auth status --active --json hosts 2>/dev/null | jq -r '.hosts[][] | .login // "", .state // "unknown"' 2>/dev/null)
+
+    # If gh is not logged in or fails, exit silently
+    [[ -z "$auth_info" ]] && { echo "HMM" > /dev/stderr; return; }
+  
+    # Split the output into login and state variables
+    local login=$(echo "$auth_info" | sed -n '1p')
+    local state=$(echo "$auth_info" | sed -n '2p' | tr '[:lower:]' '[:upper:]')
+
+    [[ -z "$login" || -z "$state" ]] && { echo "EHM" > /dev/stderr; return; }
+  
+    case "$state" in
+      SUCCESS)
+        ;; 
+      TIMEOUT)
+        login="\uE12E"$login
+        ;; 
+      ERROR)
+        login="\u2718"$login
+        ;; 
+      *)
+        state="UNKNOWN"
+        ;; 
+    esac
+
+    p10k segment -s "$state" -i 'VCS_GIT_GITHUB_ICON' -r -t "$login"
+    #p10k segment -f 208 -b 235 -s $state -i '' -t "$login"
+  }
+
+  typeset -g POWERLEVEL9K_GH_STATUS_FOREGROUND=blue
+  typeset -g POWERLEVEL9K_GH_STATUS_SUCCESS_FOREGROUND=110
+  typeset -g POWERLEVEL9K_GH_STATUS_TIMEOUT_FOREGROUND=208
+  typeset -g POWERLEVEL9K_GH_STATUS_ERROR_FOREGROUND=208
+  typeset -g POWERLEVEL9K_GH_STATUS_UNKNOWN_FOREGROUND=208
+
+  typeset -g POWERLEVEL9K_GH_STATUS_BACKGROUND=235
 
   # Transient prompt works similarly to the builtin transient_rprompt option. It trims down prompt
   # when accepting a command line. Supported values:

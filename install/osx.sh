@@ -1,12 +1,46 @@
 #!/usr/bin/env bash
 
 # Thanks to Mathias Bynens! https://mths.be/osx
+#
+# Audited against macOS 26.5 (Tahoe) on 2026-08-12. Settings that no longer do
+# anything on this version are marked "DEAD" and left in place only where the
+# comment explains why; the rest is either live or guarded behind a capability
+# check so a non-interactive run stays quiet.
 
-# Ask for the administrator password upfront
-sudo -v
+###############################################################################
+# Capability checks                                                           #
+###############################################################################
 
-# Keep-alive: update existing `sudo` time stamp until `.osx` has finished
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+# Some settings need root. When this runs from an installer with no terminal
+# attached, sudo cannot prompt, and every privileged line below would fail with
+# "sudo: a terminal is required to read the password". Detect that once here
+# and skip those settings rather than emitting a wall of errors.
+if sudo -n true 2>/dev/null; then
+  CAN_SUDO=1
+elif [ -t 0 ] && sudo -v; then
+  CAN_SUDO=1
+else
+  CAN_SUDO=0
+  echo "==> No usable sudo; skipping the settings that require root."
+fi
+
+# Keep-alive: update the existing `sudo` time stamp until this script finishes
+if [ "${CAN_SUDO}" = 1 ]; then
+  while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+fi
+
+# Safari and Mail are sandboxed. Their preferences live under
+# ~/Library/Containers/<app>/Data/Library/Preferences, and writing there needs
+# Full Disk Access for whatever runs this script. Probe once with a throwaway
+# key instead of letting fifteen writes fail one at a time.
+if defaults write com.apple.Safari _dotfilesWriteProbe -bool true 2>/dev/null; then
+  defaults delete com.apple.Safari _dotfilesWriteProbe 2>/dev/null
+  CAN_WRITE_SANDBOXED=1
+else
+  CAN_WRITE_SANDBOXED=0
+  echo "==> Safari/Mail settings skipped: grant Full Disk Access to your"
+  echo "    terminal (System Settings > Privacy & Security) and re-run."
+fi
 
 ###############################################################################
 # General UI/UX                                                               #
@@ -22,7 +56,13 @@ defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
 defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
 
 # Remove duplicates in the “Open With” menu (also see `lscleanup` alias)
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
+# The -kill flag was removed by Apple ("dangerous and no longer useful") and
+# now aborts the whole command, so only -r remains.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+  -r \
+  -domain local \
+  -domain system \
+  -domain user
 
 # Disable smart quotes as they’re annoying when typing code
 defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
@@ -40,8 +80,17 @@ defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
 # Disable the “Are you sure you want to open this application?” dialog
 defaults write com.apple.LaunchServices LSQuarantine -bool false
 
+# Tighten up the spacing in the menubar
+defaults -currentHost write -globalDomain NSStatusItemSpacing -int 12
+# Tighten up the padding in the menubar
+defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 8
+# Restart SystemUIServer to apply changes to the menubar
+killall SystemUIServer
+
 # Restart automatically if the computer freezes
-sudo systemsetup -setrestartfreeze on
+if [ "${CAN_SUDO}" = 1 ]; then
+  sudo systemsetup -setrestartfreeze on
+fi
 
 ###############################################################################
 # Language and such                                                           #
@@ -49,14 +98,16 @@ sudo systemsetup -setrestartfreeze on
 
 # Note: if you’re in the US, replace `EUR` with `USD`, `Centimeters` with
 # `Inches`, `en_GB` with `en_US`, and `true` with `false`.
-defaults write NSGlobalDomain AppleLanguages -array "en" "sv"
-defaults write NSGlobalDomain AppleLocale -string "en_SE@currency=SEK"
+defaults write NSGlobalDomain AppleLanguages -array "sv" "en"
+defaults write NSGlobalDomain AppleLocale -string "sv_SE@currency=SEK"
 defaults write NSGlobalDomain AppleMeasurementUnits -string "Centimeters"
 defaults write NSGlobalDomain AppleMetricUnits -bool true
 
 
 # Set the timezone; see `sudo systemsetup -listtimezones` for other values
-sudo systemsetup -settimezone "Europe/Stockholm" > /dev/null
+if [ "${CAN_SUDO}" = 1 ]; then
+  sudo systemsetup -settimezone "Europe/Stockholm" > /dev/null
+fi
 
 ###############################################################################
 # Trackpad, mouse, keyboard, Bluetooth accessories, and input                 #
@@ -73,20 +124,24 @@ defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 ###############################################################################
 
 # Require password immediately after sleep or screen saver begins
+# UNVERIFIED: these legacy keys still store fine, but modern macOS surfaces this
+# under System Settings > Lock Screen and may no longer read them. Check that
+# the setting actually reads "immediately" after running this.
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
-# Save screenshots to the ${HOME}/Pictures/screenshots
-defaults write com.apple.screencapture location -string "${HOME}/Pictures/screenshots"
+# Save screenshots to ${HOME}/Pictures/Screenshots
+# screencapture silently falls back to the Desktop if the directory is missing.
+mkdir -p "${HOME}/Pictures/Screenshots"
+defaults write com.apple.screencapture location -string "${HOME}/Pictures/Screenshots"
 
 # Save screenshots in PNG format (other options: BMP, GIF, JPG, PDF, TIFF)
 defaults write com.apple.screencapture type -string "png"
 
-# Enable subpixel font rendering on non-Apple LCDs
-defaults write NSGlobalDomain AppleFontSmoothing -int 2
-
 # Enable HiDPI display modes (requires restart)
-sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
+if [ "${CAN_SUDO}" = 1 ]; then
+  sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
+fi
 
 # Show icons for hard drives, servers, and removable media on the desktop
 defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool false
@@ -140,42 +195,32 @@ defaults write com.apple.dock showhidden -bool true
 # Safari & WebKit                                                             #
 ###############################################################################
 
-# Privacy: don’t send search queries to Apple
-defaults write com.apple.Safari UniversalSearchEnabled -bool false
-defaults write com.apple.Safari SuppressSearchSuggestions -bool true
+# Everything here needs Full Disk Access (see the probe at the top of the file).
+if [ "${CAN_WRITE_SANDBOXED}" = 1 ]; then
+  # Privacy: don’t send search queries to Apple
+  defaults write com.apple.Safari UniversalSearchEnabled -bool false
+  defaults write com.apple.Safari SuppressSearchSuggestions -bool true
 
-# Press Tab to highlight each item on a web page
-defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
-defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks -bool true
+  # Press Tab to highlight each item on a web page
+  defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks -bool true
 
-# Allow hitting the Backspace key to go to the previous page in history
-defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled -bool true
+  # Hide Safari’s bookmarks bar by default
+  defaults write com.apple.Safari ShowFavoritesBar -bool false
 
-# Hide Safari’s bookmarks bar by default
-defaults write com.apple.Safari ShowFavoritesBar -bool false
+  # Enable the Develop menu and the Web Inspector in Safari
+  defaults write com.apple.Safari IncludeDevelopMenu -bool true
+  defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
+  defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled -bool true
 
-# Remove useless icons from Safari’s bookmarks bar
-defaults write com.apple.Safari ProxiesInBookmarksBar "()"
+  # Warn about fraudulent websites
+  defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
 
-# Enable the Develop menu and the Web Inspector in Safari
-defaults write com.apple.Safari IncludeDevelopMenu -bool true
-defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
-defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled -bool true
+  # Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
+  defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
 
-# Warn about fraudulent websites
-defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
-
-# Enable “Do Not Track”
-defaults write com.apple.Safari SendDoNotTrackHTTPHeader -bool true
-
-# Update extensions automatically
-defaults write com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
-
-# Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
-defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
-
-# Add the keyboard shortcut ⌘ + Enter to send an email in Mail.app
-defaults write com.apple.mail NSUserKeyEquivalents -dict-add "Send" "@\U21a9"
+  # Add the keyboard shortcut ⌘ + Enter to send an email in Mail.app
+  defaults write com.apple.mail NSUserKeyEquivalents -dict-add "Send" "@\U21a9"
+fi
 
 ###############################################################################
 # Terminal & iTerm 2                                                          #
@@ -208,8 +253,9 @@ defaults write com.apple.ActivityMonitor ShowCategory -int 0
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
 
-# Enable Dashboard dev mode (allows keeping widgets on the desktop)
-defaults write com.apple.dashboard devmode -bool true
+###############################################################################
+# TextEdit                                                                    #
+###############################################################################
 
 # Open and save files as UTF-8 in TextEdit
 defaults write com.apple.TextEdit PlainTextEncoding -int 4
@@ -218,9 +264,6 @@ defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
 ###############################################################################
 # Mac App Store                                                               #
 ###############################################################################
-
-# Enable the WebKit Developer Tools in the Mac App Store
-defaults write com.apple.appstore WebKitDeveloperExtras -bool true
 
 # Enable the automatic update check
 defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
@@ -234,7 +277,7 @@ defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
 # Install System data files & security updates
 defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
 
-# Automatically download apps purchased on other Macs
+# Install system data files
 defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
 
 # Turn on app auto-update
@@ -257,10 +300,6 @@ defaults write com.apple.messageshelper.MessageController SOInputLineSettings -d
 # Google Chrome & Google Chrome Canary                                        #
 ###############################################################################
 
-# Allow installing user scripts via GitHub Gist or Userscripts.org
-defaults write com.google.Chrome ExtensionInstallSources -array "https://gist.githubusercontent.com/" "http://userscripts.org/*"
-defaults write com.google.Chrome.canary ExtensionInstallSources -array "https://gist.githubusercontent.com/" "http://userscripts.org/*"
-
 # Disable the all too sensitive backswipe on trackpads
 defaults write com.google.Chrome AppleEnableSwipeNavigateWithScrolls -bool false
 defaults write com.google.Chrome.canary AppleEnableSwipeNavigateWithScrolls -bool false
@@ -268,10 +307,6 @@ defaults write com.google.Chrome.canary AppleEnableSwipeNavigateWithScrolls -boo
 # Disable the all too sensitive backswipe on Magic Mouse
 defaults write com.google.Chrome AppleEnableMouseSwipeNavigateWithScrolls -bool false
 defaults write com.google.Chrome.canary AppleEnableMouseSwipeNavigateWithScrolls -bool false
-
-# Use the system-native print preview dialog
-defaults write com.google.Chrome DisablePrintPreview -bool true
-defaults write com.google.Chrome.canary DisablePrintPreview -bool true
 
 # Expand the print dialog by default
 defaults write com.google.Chrome PMPrintingExpandedStateForPrint2 -bool true

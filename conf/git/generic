@@ -28,11 +28,14 @@
   untracked = cyan
 [gpg]
 #	program = "C:/Program Files (x86)/GnuPG/bin/gpg"
+  program = "/usr/local/bin/gpg"
 [init]
   defaultBranch = master
 [commit]
   verbose = true
-#  gpgsign = true
+  gpgsign = true
+[tag]
+  gpgSign = true
 [pull]
   default = current
   rebase = true
@@ -54,5 +57,3 @@
   enabled = true
 [diff]
   wordRegex = [^[:space:]]
-[url "ssh://git@github.com/"]
-  insteadOf = https://github.com/

@@ -20,6 +20,6 @@ conf/vscode/extensions
 conf/vscode/argv.json
 conf/github-copilot/hosts.json
 conf/containers
-conf/git/.gitconfig.*
+conf/git/*.conf
 log/*.log
 zsh/private.zsh

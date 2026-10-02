@@ -1,3 +1,6 @@
+# If this file isn't included from ~/.zshrc
+: ${DOTFILES:=${HOME}/.dotfiles}
+
 alias zc="vim ~/.zshrc"
 alias zcr="vim ~/.zshrc && reload"
 alias shrug="echo '¯\_(ツ)_/¯' | pbcopy";
@@ -23,7 +26,7 @@ alias tma='tmux attach -d -t'
 alias reload="source ~/.zshrc && echo 'ZSH config reloaded'"
 alias dev="cd ~/code/"
 alias sshkey="cat ~/.ssh/id_rsa.pub |pbcopy"
-alias valias="vim ~/.dotfiles/zsh/alias.zsh && reload"
+alias valias="vim ${DOTFILES}/zsh/alias.zsh && reload"
 
 # Docker
 alias dr="docker-compose down && docker-compose up -d --build"

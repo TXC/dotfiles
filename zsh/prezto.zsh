@@ -1,0 +1,36 @@
+# If this file isn't included from ~/.zshrc
+: ${DOTFILES:=${HOME}/.dotfiles}
+
+# Prezto needs this
+export ZDOTDIR=${DOTFILES}
+
+# powerlevel needs to load some configurations before we init prezto.
+# So first of all, we need to load the powerlevel9k configuration.
+
+# Source Prezto.
+if [[ -s "${DOTFILES}/vendor/prezto/init.zsh" ]]; then
+	source "${DOTFILES}/vendor/prezto/init.zsh"
+fi
+
+# Source default prezto config
+if [[ -s "${DOTFILES}/.zpreztorc" ]]; then
+  source "${DOTFILES}/.zpreztorc"
+fi
+
+if type brew &>/dev/null; then
+  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+
+#  autoload -Uz compinit
+#  compinit
+fi
+
+
+# Now it's time to load the prompt autoload and then we should
+# initialize it so that we'll be able to use `prompt -s` to
+# try themes and save it to the config if it is awesome.
+# Last of all we configure the theme from the config.
+autoload -Uz promptinit
+promptinit
+prompt ${ZSH_THEME}
+
+# zstyle ':prezto:module:prompt' theme $ZSH_THEME
