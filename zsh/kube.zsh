@@ -10,7 +10,7 @@ if [[ -d "${HOME}/.kube" ]]; then
   local paths="${base_config}"
 
   if [ -d "${config_dir}" ]; then
-    for file in "${config_dir}"/*(N-.); do
+    for file in "${config_dir}"/*.{yml,yaml}(N-.); do
       paths="${paths}:${file}"
     done
   fi
